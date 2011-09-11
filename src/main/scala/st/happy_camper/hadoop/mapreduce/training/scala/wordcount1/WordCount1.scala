@@ -24,12 +24,12 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat
-import org.apache.hadoop.mapreduce.Job
 import org.apache.hadoop.util.Tool
 import org.apache.hadoop.util.ToolRunner
 
-import st.happy_camper.hadoop.mapreduce.training.scala.wordcount1.mapreduce.WordCount1Mapper
+import st.happy_camper.hadoop.scala.Job
 import st.happy_camper.hadoop.mapreduce.training.scala.wordcount1.mapreduce.WordCount1Reducer
+import st.happy_camper.hadoop.mapreduce.training.scala.wordcount1.mapreduce.WordCount1Mapper
 
 /**
  * @author ueshin
@@ -42,21 +42,16 @@ class WordCount1(conf: Configuration = new Configuration) extends Configured(con
    * @return
    */
   def createJob(inputPaths: Seq[Path], outputPath: Path) = {
-    new Job(getConf, "WordCount1") {
-      setJarByClass(getClass)
+    Job(getConf, "WordCount1", getClass) { job =>
+      job.inputFormat(classOf[TextInputFormat])
+      FileInputFormat.setInputPaths(job, inputPaths: _*)
 
-      setInputFormatClass(classOf[TextInputFormat])
-      FileInputFormat.setInputPaths(this, inputPaths: _*)
+      job.mapper(classOf[WordCount1Mapper])
+        .combiner(classOf[WordCount1Reducer])
+        .reducer(classOf[WordCount1Reducer])
 
-      setMapperClass(classOf[WordCount1Mapper])
-      setCombinerClass(classOf[WordCount1Reducer])
-      setReducerClass(classOf[WordCount1Reducer])
-
-      setOutputKeyClass(classOf[Text])
-      setOutputValueClass(classOf[LongWritable])
-
-      setOutputFormatClass(classOf[TextOutputFormat[Text, LongWritable]])
-      FileOutputFormat.setOutputPath(this, outputPath)
+      job.outputFormat(classOf[TextOutputFormat[Text, LongWritable]])
+      FileOutputFormat.setOutputPath(job, outputPath)
     }
   }
 
